@@ -1,0 +1,12 @@
+salida_tokens.json
+resumen_metricas.txt
+
+venv/
+.venv/
+env/
+
+__pycache__/
+*.pyc
+
+.vscode/
+*.log
