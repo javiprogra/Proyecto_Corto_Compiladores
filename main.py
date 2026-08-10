@@ -208,32 +208,31 @@ class AnalizadorGUI(ctk.CTk):
       messagebox.showerror(
           "Error de Análisis", f"Ocurrió un error al procesar:\n{str(e)}"
       )
+      
+  def generar_reportes_desde_interfaz(self):
+    if not self.archivo_cargado_path or not self.metricas:
+      messagebox.showwarning(
+          "ATENCIÓN",
+          "PRIMERO DEBES ABRIR Y PROCESAR UN ARCHIVO .RS.",
+      )
+      return
 
-def generar_reportes_desde_interfaz(self):
-  if not self.archivo_cargado_path or not self.metricas:
-    messagebox.showwarning(
-        "ATENCIÓN",
-        "PRIMERO DEBES ABRIR Y PROCESAR UN ARCHIVO .RS.",
-    )
-    return
+    try:
+      nombre_archivo = os.path.basename(self.archivo_cargado_path)
+      reporte_1, reporte_2 = generar_reportes_pdf(nombre_archivo)
 
-  try:
-    nombre_archivo = os.path.basename(self.archivo_cargado_path)
-    reporte_1, reporte_2 = generar_reportes_pdf(nombre_archivo)
+      messagebox.showinfo(
+          "REPORTES PDF",
+          "REPORTES GENERADOS CORRECTAMENTE:\n\n"
+          f"{str(reporte_1).upper()}\n\n"
+          f"{str(reporte_2).upper()}",
+      )
 
-    messagebox.showinfo(
-        "REPORTES PDF",
-        "REPORTES GENERADOS CORRECTAMENTE:\n\n"
-        f"{str(reporte_1).upper()}\n\n"
-        f"{str(reporte_2).upper()}",
-    )
-
-  except Exception as e:
-    messagebox.showerror(
-        "ERROR AL GENERAR REPORTES",
-        f"NO FUE POSIBLE GENERAR LOS PDF:\n{str(e).upper()}",
-    )
-
+    except Exception as e:
+      messagebox.showerror(
+          "ERROR AL GENERAR REPORTES",
+          f"NO FUE POSIBLE GENERAR LOS PDF:\n{str(e).upper()}",
+      )
   def _actualizar_reporte1(self, m):
     self.lbl_metrica_lineas.configure(text=f"Líneas de código: {m['lineas']}")
     self.lbl_metrica_caracteres.configure(
