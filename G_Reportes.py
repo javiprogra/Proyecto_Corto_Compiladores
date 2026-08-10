@@ -327,28 +327,39 @@ def generar_reporte_2(tokens, simbolos):
     return ruta
 
 
-def main():
+def generar_reportes_pdf(archivo_analizado=ARCHIVO_ANALIZADO):
     faltantes = [
-        ruta.name for ruta in (TOKENS_JSON, RESUMEN_TXT) if not ruta.exists()
+        ruta.name
+        for ruta in (TOKENS_JSON, RESUMEN_TXT)
+        if not ruta.exists()
     ]
+
     if faltantes:
-        print("Faltan estos archivos: " + ", ".join(faltantes))
-        print("Primero procesa prueba.rs desde la interfaz.")
-        return
+        raise FileNotFoundError(
+            "FALTAN ESTOS ARCHIVOS: " + ", ".join(faltantes).upper()
+        )
 
+    tokens = cargar_tokens()
+    metricas, reservadas, simbolos = cargar_resumen()
+
+    CARPETA_PDF.mkdir(exist_ok=True)
+
+    reporte_1 = generar_reporte_1(metricas, reservadas)
+    reporte_2 = generar_reporte_2(tokens, simbolos)
+
+    return reporte_1, reporte_2
+
+
+def main():
     try:
-        tokens = cargar_tokens()
-        metricas, reservadas, simbolos = cargar_resumen()
-        CARPETA_PDF.mkdir(exist_ok=True)
+        reporte_1, reporte_2 = generar_reportes_pdf()
 
-        reporte_1 = generar_reporte_1(metricas, reservadas)
-        reporte_2 = generar_reporte_2(tokens, simbolos)
+        mostrar_mensaje("REPORTES GENERADOS CORRECTAMENTE:")
+        mostrar_mensaje(reporte_1)
+        mostrar_mensaje(reporte_2)
 
-        print("Reportes generados correctamente:")
-        print(reporte_1)
-        print(reporte_2)
     except Exception as error:
-        print(f"Error al generar los reportes: {error}")
+        mostrar_mensaje(f"ERROR AL GENERAR LOS REPORTES: {error}")
 
 
 if __name__ == "__main__":
