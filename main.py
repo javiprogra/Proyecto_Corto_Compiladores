@@ -8,6 +8,9 @@ from lexer_runner import ejecutar_analizador_lexico
 #Importación de la base de datos
 from database import guardar_reporte_mongo
 
+#Importación del generador de reportes PDF
+from G_Reportes import generar_reportes_pdf
+
 # Configuración de apariencia
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -57,6 +60,13 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.btn_procesar.pack(side="right", padx=10, pady=10)
 
+    self.btn_reportes_pdf = ctk.CTkButton(
+    self.frame_top,
+    text="GENERAR REPORTES EN PDF",
+    command=self.generar_reportes_desde_interfaz,
+    state="disabled",
+    )
+    self.btn_reportes_pdf.pack(side="right", padx=10, pady=10)
     #Panel izquierdo
     self.frame_codigo = ctk.CTkFrame(self)
     self.frame_codigo.grid(
@@ -165,6 +175,7 @@ class AnalizadorGUI(ctk.CTk):
     )
     if filepath:
       self.archivo_cargado_path = filepath
+      self.btn_reportes_pdf.configure(state="disabled")
       self.lbl_archivo.configure(
           text=os.path.basename(filepath), text_color="white"
       )
@@ -181,11 +192,14 @@ class AnalizadorGUI(ctk.CTk):
       return
 
     try:
+      
+      self.btn_reportes_pdf.configure(state="disabled")
       self.metricas, self.tabla_simbolos, _ = ejecutar_analizador_lexico(
           self.archivo_cargado_path
       )
       self._actualizar_reporte1(self.metricas)
       self._actualizar_reporte2(self.tabla_simbolos)
+      self.btn_reportes_pdf.configure(state="normal")
       messagebox.showinfo(
           "Éxito", "Análisis completado y reportes actualizados."
       )
@@ -194,6 +208,31 @@ class AnalizadorGUI(ctk.CTk):
       messagebox.showerror(
           "Error de Análisis", f"Ocurrió un error al procesar:\n{str(e)}"
       )
+
+def generar_reportes_desde_interfaz(self):
+  if not self.archivo_cargado_path or not self.metricas:
+    messagebox.showwarning(
+        "ATENCIÓN",
+        "PRIMERO DEBES ABRIR Y PROCESAR UN ARCHIVO .RS.",
+    )
+    return
+
+  try:
+    nombre_archivo = os.path.basename(self.archivo_cargado_path)
+    reporte_1, reporte_2 = generar_reportes_pdf(nombre_archivo)
+
+    messagebox.showinfo(
+        "REPORTES PDF",
+        "REPORTES GENERADOS CORRECTAMENTE:\n\n"
+        f"{str(reporte_1).upper()}\n\n"
+        f"{str(reporte_2).upper()}",
+    )
+
+  except Exception as e:
+    messagebox.showerror(
+        "ERROR AL GENERAR REPORTES",
+        f"NO FUE POSIBLE GENERAR LOS PDF:\n{str(e).upper()}",
+    )
 
   def _actualizar_reporte1(self, m):
     self.lbl_metrica_lineas.configure(text=f"Líneas de código: {m['lineas']}")
