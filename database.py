@@ -2,17 +2,15 @@ from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-# Cambia la URI si usas MongoDB Atlas o un puerto distinto
 MONGO_URI = "mongodb+srv://javitoglk_db_user:OHKrEXgNjxIBqH9S@cluster0.klnwrqv.mongodb.net/?appName=Cluster0"
 DB_NAME = "compiladores_db"
 COLLECTION_NAME = "tabla_simbolos"
 
 
 def guardar_reporte_mongo(nombre_archivo, metricas, tabla_simbolos):
-  """Inserta el análisis completo (métricas + tabla de símbolos) en MongoDB."""
   try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
-    # Verificar conexión activa
+    #Verificar conexión activa
     client.admin.command("ping")
 
     db = client[DB_NAME]

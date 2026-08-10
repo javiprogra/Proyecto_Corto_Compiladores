@@ -7,17 +7,15 @@ import subprocess
 def ejecutar_analizador_lexico(
     ruta_archivo_rs, ruta_ejecutable="analizadorP.exe"
 ):
-  """Ejecuta el binario 'analizadorP.exe' pasándole la ruta de prueba.rs
-
-  y procesa los archivos 'salida_tokens.json' y 'resumen_metricas.txt'.
-  """
+#Ejecuta el binario 'analizadorP.exe' pasándole la ruta de prueba.rs y procesa los archivos 'salida_tokens.json' y 'resumen_metricas.txt'.
+  
   if not os.path.exists(ruta_ejecutable):
     raise FileNotFoundError(
         f"No se encontró el ejecutable '{ruta_ejecutable}' en la raíz del"
         " proyecto."
     )
 
-  # Ejecutar el archivo .exe enviándole el archivo .rs por tubería
+  #Ejecutar el archivo .exe enviándole el archivo .rs por tubería
   proceso = subprocess.run(
       [ruta_ejecutable, ruta_archivo_rs],
       capture_output=True,
@@ -39,15 +37,15 @@ def ejecutar_analizador_lexico(
         " 'resumen_metricas.txt'."
     )
 
-  # 1. Cargar la lista completa de tokens desinfectando la coma final
+  #Cargar la lista completa de tokens desinfectando la coma final
   with open(archivo_json, "r", encoding="utf-8") as f:
     contenido_json = f.read()
 
-  # Eliminar comas flotantes/finales antes del cierre de arreglo ']'
+  #Eliminar comas flotantes/finales antes del cierre de arreglo ']'
   contenido_limpio = re.sub(r",\s*\]", "\n]", contenido_json)
   lista_tokens = json.loads(contenido_limpio)
 
-  # 2. Cargar Métricas y Tabla de Símbolos desde el TXT
+  #Cargar Métricas y Tabla de Símbolos desde el TXT
   metricas = {
       "lineas": 0,
       "caracteres": 0,

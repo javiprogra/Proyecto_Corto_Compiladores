@@ -2,10 +2,10 @@ import os
 import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 
-# Importación del ejecutable runner
+#Importación del ejecutable runner
 from lexer_runner import ejecutar_analizador_lexico
 
-# Importación de la base de datos
+#Importación de la base de datos
 from database import guardar_reporte_mongo
 
 # Configuración de apariencia
@@ -25,12 +25,12 @@ class AnalizadorGUI(ctk.CTk):
     self.tabla_simbolos = []
     self.metricas = {}
 
-    # Configuración de cuadrícula principal
+    #Configuración de cuadrícula principal
     self.grid_columnconfigure(0, weight=1)
     self.grid_columnconfigure(1, weight=2)
     self.grid_rowconfigure(1, weight=1)
 
-    # Barra superior
+    #Barra superior
     self.frame_top = ctk.CTkFrame(self)
     self.frame_top.grid(
         row=0, column=0, columnspan=2, padx=15, pady=10, sticky="ew"
@@ -57,7 +57,7 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.btn_procesar.pack(side="right", padx=10, pady=10)
 
-    # Panel izquierdo
+    #Panel izquierdo
     self.frame_codigo = ctk.CTkFrame(self)
     self.frame_codigo.grid(
         row=1, column=0, padx=(15, 5), pady=10, sticky="nsew"
@@ -75,7 +75,7 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.txt_codigo.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Panel derecho
+    #Panel derecho
     self.tabview_resultados = ctk.CTkTabview(self)
     self.tabview_resultados.grid(
         row=1, column=1, padx=(5, 15), pady=10, sticky="nsew"
@@ -136,7 +136,7 @@ class AnalizadorGUI(ctk.CTk):
     self.txt_reservadas.pack(fill="both", expand=True, padx=10, pady=5)
 
   def _setup_tab_reporte2(self):
-    """Tabla interactiva para la Tabla de Símbolos."""
+    #Tabla interactiva para la Tabla de Símbolos
     columns = ("nombre", "tipo", "ambito")
     self.tree_simbolos = ttk.Treeview(
         self.tab_reporte2, columns=columns, show="headings"
