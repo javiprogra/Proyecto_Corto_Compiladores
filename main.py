@@ -2,6 +2,9 @@ import os
 import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 
+# Importación del ejecutable runner
+from lexer_runner import ejecutar_analizador_lexico
+
 # Configuración de apariencia
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -16,13 +19,15 @@ class AnalizadorGUI(ctk.CTk):
     self.geometry("1100x700")
 
     self.archivo_cargado_path = None
+    self.tabla_simbolos = []
+    self.metricas = {}
 
     # Configuración de cuadrícula principal
     self.grid_columnconfigure(0, weight=1)
     self.grid_columnconfigure(1, weight=2)
     self.grid_rowconfigure(1, weight=1)
 
-    # --- BARRA SUPERIOR (Selección de Archivo) ---
+    # Barra superior
     self.frame_top = ctk.CTkFrame(self)
     self.frame_top.grid(
         row=0, column=0, columnspan=2, padx=15, pady=10, sticky="ew"
@@ -49,12 +54,16 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.btn_procesar.pack(side="right", padx=10, pady=10)
 
-    # --- PANEL IZQUIERDO (Visor de Código Fuente) ---
+    # Panel izquierdo
     self.frame_codigo = ctk.CTkFrame(self)
-    self.frame_codigo.grid(row=1, column=0, padx=(15, 5), pady=10, sticky="nsew")
+    self.frame_codigo.grid(
+        row=1, column=0, padx=(15, 5), pady=10, sticky="nsew"
+    )
 
     self.lbl_codigo_title = ctk.CTkLabel(
-        self.frame_codigo, text="Código Fuente (Rust)", font=("Arial", 14, "bold")
+        self.frame_codigo,
+        text="Código Fuente (Rust)",
+        font=("Arial", 14, "bold"),
     )
     self.lbl_codigo_title.pack(anchor="w", padx=10, pady=5)
 
@@ -63,7 +72,7 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.txt_codigo.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # --- PANEL DERECHO (Pestañas de Resultados) ---
+    # Panel derecho
     self.tabview_resultados = ctk.CTkTabview(self)
     self.tabview_resultados.grid(
         row=1, column=1, padx=(5, 15), pady=10, sticky="nsew"
@@ -78,7 +87,6 @@ class AnalizadorGUI(ctk.CTk):
     self._setup_tab_reporte2()
 
   def _setup_tab_reporte1(self):
-    """Componentes visuales de las métricas solicitadas en el Reporte 1."""
     self.lbl_metrica_lineas = ctk.CTkLabel(
         self.tab_reporte1, text="Líneas de código: 0", anchor="w"
     )
@@ -126,18 +134,18 @@ class AnalizadorGUI(ctk.CTk):
 
   def _setup_tab_reporte2(self):
     """Tabla interactiva para la Tabla de Símbolos."""
-    columns = ("linea", "lexema", "token")
+    columns = ("nombre", "tipo", "ambito")
     self.tree_simbolos = ttk.Treeview(
         self.tab_reporte2, columns=columns, show="headings"
     )
 
-    self.tree_simbolos.heading("linea", text="Línea")
-    self.tree_simbolos.heading("lexema", text="Lexema")
-    self.tree_simbolos.heading("token", text="Token")
+    self.tree_simbolos.heading("nombre", text="Nombre de símbolo")
+    self.tree_simbolos.heading("tipo", text="Tipo")
+    self.tree_simbolos.heading("ambito", text="Ámbito")
 
-    self.tree_simbolos.column("linea", width=80, anchor="center")
-    self.tree_simbolos.column("lexema", width=200, anchor="w")
-    self.tree_simbolos.column("token", width=200, anchor="w")
+    self.tree_simbolos.column("nombre", width=150, anchor="w")
+    self.tree_simbolos.column("tipo", width=150, anchor="w")
+    self.tree_simbolos.column("ambito", width=220, anchor="w")
 
     self.tree_simbolos.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -168,9 +176,55 @@ class AnalizadorGUI(ctk.CTk):
           "Atención", "Por favor selecciona un archivo .rs antes de procesar."
       )
       return
-    messagebox.showinfo(
-        "Procesando", "Ejecutando analizador léxico de Flex..."
+
+    try:
+      self.metricas, self.tabla_simbolos, _ = ejecutar_analizador_lexico(
+          self.archivo_cargado_path
+      )
+      self._actualizar_reporte1(self.metricas)
+      self._actualizar_reporte2(self.tabla_simbolos)
+      messagebox.showinfo(
+          "Éxito", "Análisis completado y reportes actualizados."
+      )
+
+    except Exception as e:
+      messagebox.showerror(
+          "Error de Análisis", f"Ocurrió un error al procesar:\n{str(e)}"
+      )
+
+  def _actualizar_reporte1(self, m):
+    self.lbl_metrica_lineas.configure(text=f"Líneas de código: {m['lineas']}")
+    self.lbl_metrica_caracteres.configure(
+        text=f"Cantidad de caracteres: {m['caracteres']}"
     )
+    self.lbl_metrica_enteros.configure(text=f"Números enteros: {m['enteros']}")
+    self.lbl_metrica_flotantes.configure(
+        text=f"Números flotantes: {m['flotantes']}"
+    )
+    self.lbl_metrica_ids.configure(
+        text=f"Identificadores: {m['identificadores']}"
+    )
+    self.lbl_metrica_booleanos.configure(
+        text=f"Valores booleanos: {m['booleanos']}"
+    )
+    self.lbl_metrica_operadores.configure(
+        text=f"Operadores: {m['operadores']}"
+    )
+
+    texto_res = "\n".join(
+        [f"{kw}: {cant}" for kw, cant in m["palabras_reservadas"].items()]
+    )
+    self.txt_reservadas.delete("1.0", "end")
+    self.txt_reservadas.insert("1.0", texto_res)
+
+  def _actualizar_reporte2(self, tabla):
+    for item in self.tree_simbolos.get_children():
+      self.tree_simbolos.delete(item)
+
+    for fila in tabla:
+      self.tree_simbolos.insert(
+          "", "end", values=(fila["nombre"], fila["tipo"], fila["ambito"])
+      )
 
   def guardar_en_mongodb(self):
     messagebox.showinfo("MongoDB", "Conectando con MongoDB...")
