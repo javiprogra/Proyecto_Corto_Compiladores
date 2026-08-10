@@ -5,6 +5,9 @@ from tkinter import filedialog, messagebox, ttk
 # Importación del ejecutable runner
 from lexer_runner import ejecutar_analizador_lexico
 
+# Importación de la base de datos
+from database import guardar_reporte_mongo
+
 # Configuración de apariencia
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -227,7 +230,31 @@ class AnalizadorGUI(ctk.CTk):
       )
 
   def guardar_en_mongodb(self):
-    messagebox.showinfo("MongoDB", "Conectando con MongoDB...")
+    if not self.tabla_simbolos:
+      messagebox.showwarning(
+          "Atención",
+          "No hay datos para guardar. Ejecuta 'Procesar Código' primero.",
+      )
+      return
+
+    nombre_file = (
+        os.path.basename(self.archivo_cargado_path)
+        if self.archivo_cargado_path
+        else "codigo_desconocido.rs"
+    )
+
+    exito, mensaje = guardar_reporte_mongo(
+        nombre_file, self.metricas, self.tabla_simbolos
+    )
+
+    if exito:
+      messagebox.showinfo(
+          "MongoDB",
+          f"¡Tabla de Símbolos guardada exitosamente!\nID de registro:"
+          f" {mensaje}",
+      )
+    else:
+      messagebox.showerror("Error MongoDB", f"Falló el guardado:\n{mensaje}")
 
 
 if __name__ == "__main__":
