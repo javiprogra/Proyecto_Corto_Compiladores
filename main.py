@@ -8,7 +8,7 @@ from lexer_runner import ejecutar_analizador_lexico
 #Importación de la base de datos
 from database import guardar_reporte_mongo
 
-# Configuración de apariencia
+#Configuración de apariencia
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
@@ -255,7 +255,6 @@ class AnalizadorGUI(ctk.CTk):
       )
     else:
       messagebox.showerror("Error MongoDB", f"Falló el guardado:\n{mensaje}")
-
 
 if __name__ == "__main__":
   app = AnalizadorGUI()
