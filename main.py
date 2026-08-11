@@ -9,6 +9,10 @@ from lexer_runner import ejecutar_analizador_lexico
 from database import guardar_reporte_mongo
 
 #Configuración de apariencia
+#Importación del generador de reportes PDF
+from G_Reportes import generar_reportes_pdf
+
+# Configuración de apariencia
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
@@ -24,6 +28,7 @@ class AnalizadorGUI(ctk.CTk):
     self.archivo_cargado_path = None
     self.tabla_simbolos = []
     self.metricas = {}
+    self.lexemas = []
 
     #Configuración de cuadrícula principal
     self.grid_columnconfigure(0, weight=1)
@@ -57,6 +62,13 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.btn_procesar.pack(side="right", padx=10, pady=10)
 
+    self.btn_reportes_pdf = ctk.CTkButton(
+    self.frame_top,
+    text="GENERAR REPORTES EN PDF",
+    command=self.generar_reportes_desde_interfaz,
+    state="disabled",
+    )
+    self.btn_reportes_pdf.pack(side="right", padx=10, pady=10)
     #Panel izquierdo
     self.frame_codigo = ctk.CTkFrame(self)
     self.frame_codigo.grid(
@@ -81,13 +93,15 @@ class AnalizadorGUI(ctk.CTk):
         row=1, column=1, padx=(5, 15), pady=10, sticky="nsew"
     )
 
-    self.tab_reporte1 = self.tabview_resultados.add("Reporte 1: Métricas")
-    self.tab_reporte2 = self.tabview_resultados.add(
-        "Reporte 2: Tabla de Símbolos"
+    self.tab_reporte1 = self.tabview_resultados.add("Métricas")
+    self.tab_reporte2 = self.tabview_resultados.add("Tabla de Símbolos")
+    self.tab_reporte3 = self.tabview_resultados.add(
+      "Lexemas / Tokens"
     )
 
     self._setup_tab_reporte1()
     self._setup_tab_reporte2()
+    self._setup_tab_reporte3()
 
   def _setup_tab_reporte1(self):
     self.lbl_metrica_lineas = ctk.CTkLabel(
@@ -159,12 +173,30 @@ class AnalizadorGUI(ctk.CTk):
     )
     self.btn_guardar_mongo.pack(padx=10, pady=10)
 
+  def _setup_tab_reporte3(self):
+      #Tabla interactiva para mostrar el flujo completo de Lexemas/Tokens
+      columns = ("lexema", "token", "linea")
+      self.tree_lexemas = ttk.Treeview(
+          self.tab_reporte3, columns=columns, show="headings"
+      )
+
+      self.tree_lexemas.heading("lexema", text="Lexema")
+      self.tree_lexemas.heading("token", text="Token")
+      self.tree_lexemas.heading("linea", text="Línea")
+
+      self.tree_lexemas.column("lexema", width=180, anchor="w")
+      self.tree_lexemas.column("token", width=200, anchor="w")
+      self.tree_lexemas.column("linea", width=80, anchor="center")
+
+      self.tree_lexemas.pack(fill="both", expand=True, padx=10, pady=10)
+
   def cargar_archivo(self):
     filepath = filedialog.askopenfilename(
         filetypes=[("Archivos de Rust", "*.rs"), ("Todos los archivos", "*.*")]
     )
     if filepath:
       self.archivo_cargado_path = filepath
+      self.btn_reportes_pdf.configure(state="disabled")
       self.lbl_archivo.configure(
           text=os.path.basename(filepath), text_color="white"
       )
@@ -181,11 +213,15 @@ class AnalizadorGUI(ctk.CTk):
       return
 
     try:
-      self.metricas, self.tabla_simbolos, _ = ejecutar_analizador_lexico(
+      
+      self.btn_reportes_pdf.configure(state="disabled")
+      self.metricas, self.tabla_simbolos, self.lista_lexemas = ejecutar_analizador_lexico(
           self.archivo_cargado_path
       )
       self._actualizar_reporte1(self.metricas)
       self._actualizar_reporte2(self.tabla_simbolos)
+      self._actualizar_reporte3(self.lista_lexemas)
+      self.btn_reportes_pdf.configure(state="normal")
       messagebox.showinfo(
           "Éxito", "Análisis completado y reportes actualizados."
       )
@@ -194,7 +230,31 @@ class AnalizadorGUI(ctk.CTk):
       messagebox.showerror(
           "Error de Análisis", f"Ocurrió un error al procesar:\n{str(e)}"
       )
+      
+  def generar_reportes_desde_interfaz(self):
+    if not self.archivo_cargado_path or not self.metricas:
+      messagebox.showwarning(
+          "ATENCIÓN",
+          "PRIMERO DEBES ABRIR Y PROCESAR UN ARCHIVO .RS.",
+      )
+      return
 
+    try:
+      nombre_archivo = os.path.basename(self.archivo_cargado_path)
+      reporte_1, reporte_2 = generar_reportes_pdf(nombre_archivo)
+
+      messagebox.showinfo(
+          "REPORTES PDF",
+          "REPORTES GENERADOS CORRECTAMENTE:\n\n"
+          f"{str(reporte_1).upper()}\n\n"
+          f"{str(reporte_2).upper()}",
+      )
+
+    except Exception as e:
+      messagebox.showerror(
+          "ERROR AL GENERAR REPORTES",
+          f"NO FUE POSIBLE GENERAR LOS PDF:\n{str(e).upper()}",
+      )
   def _actualizar_reporte1(self, m):
     self.lbl_metrica_lineas.configure(text=f"Líneas de código: {m['lineas']}")
     self.lbl_metrica_caracteres.configure(
@@ -228,6 +288,21 @@ class AnalizadorGUI(ctk.CTk):
       self.tree_simbolos.insert(
           "", "end", values=(fila["nombre"], fila["tipo"], fila["ambito"])
       )
+
+  def _actualizar_reporte3(self, lexemas):
+      for item in self.tree_lexemas.get_children():
+        self.tree_lexemas.delete(item)
+
+      for fila in lexemas:
+        self.tree_lexemas.insert(
+            "",
+            "end",
+            values=(
+                fila.get("lexema", ""),
+                fila.get("token", ""),
+                fila.get("linea", ""),
+            ),
+        )
 
   def guardar_en_mongodb(self):
     if not self.tabla_simbolos:
